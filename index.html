@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Purchase Order System – Prabh Aasra</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --green-dark: #1a5c2a; --green-mid: #2d8a45; --green-light: #e6f4ea; --green-pale: #f4faf6;
+    --slate: #1a2e4a; --slate-mid: #3d5a80; --slate-light: #e8eef5;
+    --amber: #f59e0b; --amber-light: #fef3c7;
+    --red: #dc2626; --red-light: #fee2e2;
+    --text: #1e293b; --muted: #64748b; --border: #cbd5e1; --white: #ffffff; --bg: #f1f5f9;
+  }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* NAV */
+  nav { background: var(--slate); padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 56px; position: sticky; top: 0; z-index: 100; }
+  .nav-brand { display: flex; align-items: center; gap: 10px; color: white; }
+  .nav-logo { width: 32px; height: 32px; background: var(--green-mid); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .nav-title { font-size: 0.95rem; font-weight: 700; }
+  .nav-sub { font-size: 0.68rem; color: #94a3b8; }
+  .nav-user { display: flex; align-items: center; gap: 8px; color: #cbd5e1; font-size: 0.8rem; }
+  .avatar { width: 30px; height: 30px; background: var(--green-mid); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.75rem; font-weight: 700; }
+
+  /* LAYOUT */
+  .layout { display: grid; grid-template-columns: 220px 1fr; min-height: calc(100vh - 56px); }
+
+  /* SIDEBAR */
+  aside { background: var(--white); border-right: 1px solid var(--border); padding: 20px 0; }
+  .sidebar-section { padding: 0 12px; margin-bottom: 20px; }
+  .sidebar-label { font-size: 0.6rem; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); padding: 0 8px; margin-bottom: 6px; }
+  .sidebar-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; font-size: 0.82rem; color: var(--muted); cursor: pointer; transition: all 0.15s; }
+  .sidebar-item:hover { background: var(--bg); color: var(--text); }
+  .sidebar-item.active { background: var(--green-light); color: var(--green-dark); font-weight: 600; }
+  .sidebar-item .icon { font-size: 15px; width: 18px; text-align: center; }
+  .badge { margin-left: auto; background: var(--amber); color: white; font-size: 0.6rem; font-weight: 700; padding: 2px 6px; border-radius: 10px; }
+
+  /* MAIN */
+  main { padding: 24px; overflow-y: auto; }
+  .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
+  .page-title { font-size: 1.2rem; font-weight: 700; color: var(--slate); }
+  .page-sub { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+  .btn-new { background: var(--green-dark); color: white; border: none; padding: 9px 18px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+
+  /* STATS */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+  .stat-card { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .stat-label { font-size: 0.7rem; color: var(--muted); margin-bottom: 4px; }
+  .stat-value { font-size: 1.4rem; font-weight: 700; color: var(--slate); }
+  .stat-sub { font-size: 0.68rem; color: var(--muted); margin-top: 2px; }
+  .stat-card.green .stat-value { color: var(--green-dark); }
+  .stat-card.amber .stat-value { color: #b45309; }
+  .stat-card.red .stat-value { color: var(--red); }
+
+  /* SEARCH */
+  .search-bar { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; display: flex; gap: 10px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+  .search-input-wrap { flex: 1; min-width: 200px; display: flex; align-items: center; gap: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: 7px 12px; }
+  .search-input-wrap input { border: none; background: transparent; font-size: 0.82rem; color: var(--text); outline: none; width: 100%; }
+  .filter-select { background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: 7px 12px; font-size: 0.8rem; color: var(--text); outline: none; cursor: pointer; }
+  .btn-search { background: var(--slate); color: white; border: none; padding: 8px 16px; border-radius: 7px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+  .btn-refresh { background: var(--green-dark); color: white; border: none; padding: 8px 16px; border-radius: 7px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+
+  /* TABLE */
+  .table-wrap { background: var(--white); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 20px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  thead { background: var(--slate-light); }
+  th { padding: 10px 14px; text-align: left; font-size: 0.7rem; font-weight: 700; color: var(--muted); letter-spacing: 0.5px; text-transform: uppercase; border-bottom: 1px solid var(--border); }
+  td { padding: 11px 14px; border-bottom: 1px solid #f1f5f9; color: var(--text); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--green-pale); }
+  .po-num { font-weight: 700; color: var(--slate); font-family: monospace; font-size: 0.82rem; }
+  .status-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 20px; font-size: 0.68rem; font-weight: 700; }
+  .status-draft { background: var(--slate-light); color: var(--slate-mid); }
+  .status-submitted { background: var(--amber-light); color: #92400e; }
+  .status-approved { background: var(--green-light); color: var(--green-dark); }
+  .status-rejected { background: var(--red-light); color: var(--red); }
+  .action-btns { display: flex; gap: 6px; }
+  .btn-icon { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; font-size: 0.72rem; cursor: pointer; color: var(--muted); transition: all 0.15s; }
+  .btn-icon:hover { background: var(--slate-light); color: var(--slate); }
+  .empty-table { text-align: center; padding: 40px; color: var(--muted); font-size: 0.85rem; }
+
+  /* FORM */
+  .form-panel { background: var(--white); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .form-header { background: var(--slate); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; }
+  .form-header-title { color: white; font-size: 0.88rem; font-weight: 700; }
+  .po-badge { background: var(--green-mid); color: white; font-size: 0.75rem; font-weight: 700; padding: 4px 12px; border-radius: 20px; font-family: monospace; }
+  .form-body { padding: 20px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group.full { grid-column: 1 / -1; }
+  label { font-size: 0.72rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; }
+  input[type="text"], input[type="number"], input[type="date"], textarea, select { border: 1px solid var(--border); border-radius: 7px; padding: 8px 12px; font-size: 0.82rem; color: var(--text); outline: none; transition: border 0.15s; font-family: inherit; background: var(--white); width: 100%; }
+  input:focus, textarea:focus, select:focus { border-color: var(--green-mid); box-shadow: 0 0 0 3px rgba(45,138,69,0.1); }
+  input[readonly] { background: var(--green-pale); color: var(--green-dark); font-weight: 700; font-family: monospace; }
+  textarea { resize: vertical; min-height: 70px; }
+
+  /* ITEMS TABLE */
+  .items-section { margin-bottom: 16px; }
+  .items-label { font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px; }
+  .items-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .items-table th { background: var(--slate-light); padding: 8px 10px; font-size: 0.68rem; text-align: left; }
+  .items-table td { padding: 6px 8px; border-bottom: 1px solid #f1f5f9; }
+  .items-table input { border: none; background: transparent; font-size: 0.78rem; width: 100%; outline: none; padding: 2px 4px; }
+  .items-table input:focus { background: var(--green-pale); border-radius: 4px; }
+  .add-row-btn { background: none; border: 1px dashed var(--border); border-radius: 7px; padding: 7px; width: 100%; font-size: 0.78rem; color: var(--muted); cursor: pointer; margin-top: 6px; transition: all 0.15s; }
+  .add-row-btn:hover { background: var(--green-pale); color: var(--green-dark); border-color: var(--green-mid); }
+
+  /* TOTALS */
+  .totals { display: flex; justify-content: flex-end; margin-bottom: 16px; }
+  .totals-box { background: var(--slate-light); border-radius: 8px; padding: 12px 16px; min-width: 200px; }
+  .totals-row { display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 4px; color: var(--muted); }
+  .totals-row.total { font-weight: 700; font-size: 0.9rem; color: var(--slate); border-top: 1px solid var(--border); padding-top: 6px; margin-top: 4px; }
+
+  /* BUTTONS */
+  .form-actions { display: flex; gap: 10px; padding: 16px 20px; background: var(--bg); border-top: 1px solid var(--border); flex-wrap: wrap; align-items: center; }
+  .btn { padding: 9px 18px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; cursor: pointer; border: none; display: flex; align-items: center; gap: 6px; transition: opacity 0.15s; }
+  .btn:hover { opacity: 0.88; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-draft { background: var(--slate-light); color: var(--slate); border: 1px solid var(--border); }
+  .btn-update { background: var(--amber-light); color: #92400e; border: 1px solid #f0c060; }
+  .btn-submit { background: var(--green-dark); color: white; }
+  .btn-cancel { background: var(--red-light); color: var(--red); border: 1px solid #fca5a5; margin-left: auto; }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 24px; right: 24px; color: white; padding: 12px 20px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.2); animation: slideUp 0.3s ease; z-index: 9999; max-width: 380px; }
+  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  @media (max-width: 768px) {
+    .layout { grid-template-columns: 1fr; }
+    aside { display: none; }
+    .stats { grid-template-columns: 1fr 1fr; }
+    .form-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">
+    <div class="nav-logo">🏥</div>
+    <div>
+      <div class="nav-title">Prabh Aasra</div>
+      <div class="nav-sub">Purchase Order System</div>
+    </div>
+  </div>
+  <div class="nav-user">
+    <div class="avatar">IT</div>
+    Simrandeep Kaur
+  </div>
+</nav>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Menu</div>
+      <div class="sidebar-item active"><span class="icon">📋</span> Purchase Orders</div>
+      <div class="sidebar-item"><span class="icon">📊</span> Dashboard <span class="badge">Soon</span></div>
+      <div class="sidebar-item"><span class="icon">🏢</span> Vendors <span class="badge">Soon</span></div>
+      <div class="sidebar-item"><span class="icon">✅</span> Approvals</div>
+      <div class="sidebar-item"><span class="icon">📁</span> Reports <span class="badge">Soon</span></div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Quick Filters</div>
+      <div class="sidebar-item" onclick="filterByStatus('Draft')"><span class="icon">🟡</span> Drafts</div>
+      <div class="sidebar-item" onclick="filterByStatus('Submitted')"><span class="icon">🟠</span> Submitted</div>
+      <div class="sidebar-item" onclick="filterByStatus('Approved')"><span class="icon">🟢</span> Approved</div>
+      <div class="sidebar-item" onclick="filterByStatus('Rejected')"><span class="icon">🔴</span> Rejected</div>
+      <div class="sidebar-item" onclick="filterByStatus('')"><span class="icon">📋</span> All POs</div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Settings</div>
+      <div class="sidebar-item"><span class="icon">⚙️</span> Settings</div>
+      <div class="sidebar-item"><span class="icon">🔔</span> Notifications</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main>
+
+    <!-- HEADER -->
+    <div class="page-header">
+      <div>
+        <div class="page-title">Purchase Orders</div>
+        <div class="page-sub">Manage and track all purchase requests</div>
+      </div>
+      <button class="btn-new" onclick="newPO()">＋ New PO</button>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-label">Total POs</div>
+        <div class="stat-value" id="stat-total">0</div>
+        <div class="stat-sub">All time</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-label">Drafts</div>
+        <div class="stat-value" id="stat-draft">0</div>
+        <div class="stat-sub">In progress</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">Submitted</div>
+        <div class="stat-value" id="stat-submitted">0</div>
+        <div class="stat-sub">Pending approval</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-label">Approved</div>
+        <div class="stat-value" id="stat-approved">0</div>
+        <div class="stat-sub">Completed</div>
+      </div>
+    </div>
+
+    <!-- SEARCH BAR -->
+    <div class="search-bar">
+      <div class="search-input-wrap">
+        🔍
+        <input type="text" id="search-input" placeholder="Search by PO number, vendor, requested by…" onkeyup="if(event.key==='Enter') searchPOs()" />
+      </div>
+      <select class="filter-select" id="filter-status" onchange="searchPOs()">
+        <option value="">All Status</option>
+        <option value="Draft">Draft</option>
+        <option value="Submitted">Submitted</option>
+        <option value="Approved">Approved</option>
+        <option value="Rejected">Rejected</option>
+      </select>
+      <button class="btn-search" onclick="searchPOs()">🔍 Search</button>
+      <button class="btn-refresh" onclick="loadPOs()">↻ Refresh</button>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>PO Number</th>
+            <th>Date</th>
+            <th>Vendor</th>
+            <th>Requested By</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="po-table-body">
+          <tr><td colspan="7" class="empty-table">⏳ Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- FORM PANEL -->
+    <div class="form-panel" id="po-form">
+      <div class="form-header">
+        <div class="form-header-title" id="form-title">📋 New Purchase Order</div>
+        <div class="po-badge" id="po-badge-display">—</div>
+      </div>
+
+      <div class="form-body">
+        <div class="form-grid">
+
+          <div class="form-group">
+            <label>PO Number</label>
+            <input type="text" id="po-number" readonly />
+          </div>
+
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="po-date" />
+          </div>
+
+          <div class="form-group">
+            <label>Vendor Name *</label>
+            <input type="text" id="vendor-name" placeholder="e.g. MedSupply Punjab" />
+          </div>
+
+          <div class="form-group">
+            <label>Requested By *</label>
+            <input type="text" id="requested-by" placeholder="Staff name" />
+          </div>
+
+          <div class="form-group">
+            <label>Department *</label>
+            <select id="department">
+              <option value="">Select department</option>
+              <option>Medical / Hospital</option>
+              <option>Administration</option>
+              <option>Education</option>
+              <option>Rehabilitation</option>
+              <option>IT</option>
+              <option>Disaster Relief</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Required By Date</label>
+            <input type="date" id="required-by" />
+          </div>
+
+          <div class="form-group full">
+            <label>Notes / Remarks</label>
+            <textarea id="notes" placeholder="Any additional notes…"></textarea>
+          </div>
+
+        </div>
+
+        <!-- ITEMS -->
+        <div class="items-section">
+          <div class="items-label">Items</div>
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Item Description</th>
+                <th>Qty</th>
+                <th>Unit Price (₹)</th>
+                <th>Total (₹)</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="items-body"></tbody>
+          </table>
+          <button class="add-row-btn" onclick="addItemRow()">＋ Add Item</button>
+        </div>
+
+        <!-- TOTALS -->
+        <div class="totals">
+          <div class="totals-box">
+            <div class="totals-row"><span>Subtotal</span><span id="subtotal">₹0.00</span></div>
+            <div class="totals-row"><span>Tax (GST 18%)</span><span id="tax">₹0.00</span></div>
+            <div class="totals-row total"><span>Total</span><span id="grand-total">₹0.00</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACTION BUTTONS -->
+      <div class="form-actions">
+        <button class="btn btn-draft"  id="btn-draft"  onclick="saveDraft()">💾 Save as Draft</button>
+        <button class="btn btn-update" id="btn-update" onclick="updatePO()">✏️ Update</button>
+        <button class="btn btn-submit" id="btn-submit" onclick="submitPO()">🚀 Submit PO</button>
+        <button class="btn btn-cancel" onclick="resetForm()">✕ Cancel</button>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast" style="display:none">
+  <span id="toast-msg"></span>
+</div>
+
+<script>
+
+  // =========================================
+  // STEP 1 — PASTE YOUR WEBHOOK URLS HERE
+  // =========================================
+  const WEBHOOKS = {
+    saveDraft : 'https://prabhaasra.app.n8n.cloud/webhook/save-draft',
+    update    : 'https://prabhaasra.app.n8n.cloud/webhook/update-po',
+    submit    : 'https://prabhaasra.app.n8n.cloud/webhook/submit-po',
+    getAll    : 'https://prabhaasra.app.n8n.cloud/webhook/get-pos'   // Add this after creating GET workflow
+  };
+
+  // =========================================
+  // STATE
+  // =========================================
+  let allPOs = [];
+  let itemRowCount = 0;
+
+  // =========================================
+  // ON PAGE LOAD
+  // =========================================
+  window.onload = () => {
+    setToday();
+    generatePONumber();
+    addItemRow();
+    addItemRow();
+    loadPOs();
+  };
+
+  // =========================================
+  // SET TODAY'S DATE
+  // =========================================
+  function setToday() {
+    document.getElementById('po-date').value = new Date().toISOString().split('T')[0];
+  }
+
+  // =========================================
+  // AUTO GENERATE PO NUMBER
+  // e.g. PO-2026-0001
+  // =========================================
+  function generatePONumber() {
+    const year = new Date().getFullYear();
+    const seq  = String(Date.now()).slice(-4);
+    const po   = `PO-${year}-${seq}`;
+    document.getElementById('po-number').value        = po;
+    document.getElementById('po-badge-display').textContent = po;
+  }
+
+  // =========================================
+  // ADD ITEM ROW
+  // =========================================
+  function addItemRow() {
+    itemRowCount++;
+    const tr = document.createElement('tr');
+    tr.id = `row-${itemRowCount}`;
+    tr.innerHTML = `
+      <td style="color:var(--muted);font-size:0.72rem">${itemRowCount}</td>
+      <td><input type="text"   class="item-desc"  placeholder="Item name…"   oninput="calcTotals()" /></td>
+      <td><input type="number" class="item-qty"   placeholder="0"   style="width:60px"  oninput="calcTotals()" min="0" /></td>
+      <td><input type="number" class="item-price" placeholder="0.00" style="width:90px" oninput="calcTotals()" min="0" step="0.01" /></td>
+      <td class="item-total" style="color:var(--muted)">—</td>
+      <td><button class="btn-icon" style="padding:3px 6px" onclick="removeRow(${itemRowCount})">✕</button></td>
+    `;
+    document.getElementById('items-body').appendChild(tr);
+  }
+
+  function removeRow(id) {
+    const row = document.getElementById(`row-${id}`);
+    if (row) { row.remove(); calcTotals(); }
+  }
+
+  // =========================================
+  // CALCULATE TOTALS
+  // =========================================
+  function calcTotals() {
+    let subtotal = 0;
+    document.querySelectorAll('#items-body tr').forEach(row => {
+      const qty   = parseFloat(row.querySelector('.item-qty')?.value)   || 0;
+      const price = parseFloat(row.querySelector('.item-price')?.value) || 0;
+      const total = qty * price;
+      const cell  = row.querySelector('.item-total');
+      if (cell) cell.textContent = total > 0 ? `₹${total.toFixed(2)}` : '—';
+      subtotal += total;
+    });
+    const tax   = subtotal * 0.18;
+    const grand = subtotal + tax;
+    document.getElementById('subtotal').textContent    = `₹${subtotal.toFixed(2)}`;
+    document.getElementById('tax').textContent         = `₹${tax.toFixed(2)}`;
+    document.getElementById('grand-total').textContent = `₹${grand.toFixed(2)}`;
+  }
+
+  // =========================================
+  // COLLECT ITEMS FROM TABLE
+  // =========================================
+  function collectItems() {
+    const items = [];
+    document.querySelectorAll('#items-body tr').forEach(row => {
+      const desc  = row.querySelector('.item-desc')?.value?.trim();
+      const qty   = row.querySelector('.item-qty')?.value   || 0;
+      const price = row.querySelector('.item-price')?.value || 0;
+      if (desc) items.push({ description: desc, quantity: qty, unit_price: price, total: (qty * price).toFixed(2) });
+    });
+    return items;
+  }
+
+  // =========================================
+  // COLLECT ALL FORM DATA
+  // =========================================
+  function collectFormData(status) {
+    const subtotal = parseFloat(document.getElementById('subtotal').textContent.replace('₹',''))    || 0;
+    const tax      = parseFloat(document.getElementById('tax').textContent.replace('₹',''))         || 0;
+    return {
+      po_number    : document.getElementById('po-number').value,
+      date         : document.getElementById('po-date').value,
+      vendor_name  : document.getElementById('vendor-name').value.trim(),
+      requested_by : document.getElementById('requested-by').value.trim(),
+      department   : document.getElementById('department').value,
+      required_by  : document.getElementById('required-by').value,
+      notes        : document.getElementById('notes').value.trim(),
+      items        : JSON.stringify(collectItems()),
+      total_amount : (subtotal + tax).toFixed(2),
+      status       : status
+    };
+  }
+
+  // =========================================
+  // VALIDATE REQUIRED FIELDS
+  // =========================================
+  function validate() {
+    if (!document.getElementById('vendor-name').value.trim())  { showToast('⚠️ Vendor Name is required',  '#b45309'); return false; }
+    if (!document.getElementById('requested-by').value.trim()) { showToast('⚠️ Requested By is required', '#b45309'); return false; }
+    if (!document.getElementById('department').value)          { showToast('⚠️ Department is required',   '#b45309'); return false; }
+    return true;
+  }
+
+  // =========================================
+  // SEND DATA TO N8N WEBHOOK
+  // =========================================
+  async function sendToN8N(url, data, btnId, successMsg, color) {
+    if (!validate()) return;
+    const btn = document.getElementById(btnId);
+    const orig = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<div class="spinner"></div> Sending…`;
+    try {
+      const res = await fetch(url, {
+        method  : 'POST',
+        headers : { 'Content-Type': 'application/json' },
+        body    : JSON.stringify(data)
+      });
+      if (res.ok) {
+        showToast(successMsg, color);
+        setTimeout(loadPOs, 1500);
+      } else {
+        showToast(`❌ Error ${res.status} — check n8n workflow is Active`, '#dc2626');
+      }
+    } catch (e) {
+      showToast('❌ Network error — is n8n workflow Active?', '#dc2626');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = orig;
+    }
+  }
+
+  // =========================================
+  // BUTTON ACTIONS
+  // =========================================
+  function saveDraft() {
+    sendToN8N(WEBHOOKS.saveDraft, collectFormData('Draft'), 'btn-draft', '💾 Saved as Draft!', '#3d5a80');
+  }
+
+  function updatePO() {
+    sendToN8N(WEBHOOKS.update, collectFormData('Draft'), 'btn-update', '✏️ PO Updated!', '#b45309');
+  }
+
+  function submitPO() {
+    sendToN8N(WEBHOOKS.submit, collectFormData('Submitted'), 'btn-submit', '🚀 Submitted! Slack notified.', '#1a5c2a');
+    setTimeout(resetForm, 2500);
+  }
+
+  // =========================================
+  // RESET FORM
+  // =========================================
+  function resetForm() {
+    ['vendor-name','requested-by','required-by','notes'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('department').value = '';
+    document.getElementById('items-body').innerHTML = '';
+    itemRowCount = 0;
+    addItemRow(); addItemRow();
+    calcTotals();
+    generatePONumber();
+    setToday();
+    document.getElementById('form-title').textContent = '📋 New Purchase Order';
+  }
+
+  function newPO() {
+    resetForm();
+    document.getElementById('po-form').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  // =========================================
+  // LOAD POs FROM GOOGLE SHEET via n8n
+  // =========================================
+  async function loadPOs() {
+    const tbody = document.getElementById('po-table-body');
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-table">⏳ Loading...</td></tr>`;
+    try {
+      const res  = await fetch(WEBHOOKS.getAll);
+      const data = await res.json();
+
+      // n8n returns array of objects
+      allPOs = Array.isArray(data) ? data : (data.data || []);
+
+      if (!allPOs.length) {
+        tbody.innerHTML = `<tr><td colspan="7" class="empty-table">No POs found. Create your first one below!</td></tr>`;
+      } else {
+        renderTable(allPOs);
+      }
+      updateStats(allPOs);
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="7" class="empty-table">
+        ⚠️ Could not load POs.<br>
+        <small>Make sure the <strong>PO - Get All</strong> workflow is Active in n8n.</small>
+      </td></tr>`;
+    }
+  }
+
+  // =========================================
+  // RENDER TABLE
+  // =========================================
+  function renderTable(pos) {
+    const tbody = document.getElementById('po-table-body');
+    if (!pos.length) {
+      tbody.innerHTML = `<tr><td colspan="7" class="empty-table">No results found.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = pos.map(po => {
+      const status = po['Status'] || po['status'] || 'Draft';
+      const cls    = 'status-' + status.toLowerCase();
+      const amt    = parseFloat(po['Total Amount'] || po['total_amount'] || 0);
+      return `<tr>
+        <td><span class="po-num">${po['PO Number'] || po['po_number'] || ''}</span></td>
+        <td>${po['Date'] || po['date'] || ''}</td>
+        <td>${po['Vendor Name'] || po['vendor_name'] || ''}</td>
+        <td>${po['Requested By'] || po['requested_by'] || ''}</td>
+        <td>₹${amt.toLocaleString('en-IN', {minimumFractionDigits:2})}</td>
+        <td><span class="status-badge ${cls}">● ${status}</span></td>
+        <td><div class="action-btns">
+          <button class="btn-icon" onclick='loadIntoForm(${JSON.stringify(po).replace(/'/g,"&#39;")})'>✏️ Edit</button>
+        </div></td>
+      </tr>`;
+    }).join('');
+  }
+
+  // =========================================
+  // LOAD PO INTO FORM FOR EDITING
+  // =========================================
+  function loadIntoForm(po) {
+    document.getElementById('po-number').value    = po['PO Number']    || po['po_number']    || '';
+    document.getElementById('po-date').value      = po['Date']         || po['date']         || '';
+    document.getElementById('vendor-name').value  = po['Vendor Name']  || po['vendor_name']  || '';
+    document.getElementById('requested-by').value = po['Requested By'] || po['requested_by'] || '';
+    document.getElementById('department').value   = po['Department']   || po['department']   || '';
+    document.getElementById('required-by').value  = po['Required By']  || po['required_by']  || '';
+    document.getElementById('notes').value        = po['Notes']        || po['notes']        || '';
+    document.getElementById('po-badge-display').textContent = po['PO Number'] || po['po_number'] || '';
+    document.getElementById('form-title').textContent = '✏️ Edit Purchase Order';
+    document.getElementById('po-form').scrollIntoView({ behavior: 'smooth' });
+    showToast('📋 PO loaded for editing', '#3d5a80');
+  }
+
+  // =========================================
+  // SEARCH & FILTER
+  // =========================================
+  function searchPOs() {
+    const q      = document.getElementById('search-input').value.toLowerCase();
+    const status = document.getElementById('filter-status').value;
+    const filtered = allPOs.filter(po => {
+      const poNum  = (po['PO Number']    || po['po_number']    || '').toLowerCase();
+      const vendor = (po['Vendor Name']  || po['vendor_name']  || '').toLowerCase();
+      const reqBy  = (po['Requested By'] || po['requested_by'] || '').toLowerCase();
+      const st     = po['Status']        || po['status']        || '';
+      const matchText   = !q || poNum.includes(q) || vendor.includes(q) || reqBy.includes(q);
+      const matchStatus = !status || st === status;
+      return matchText && matchStatus;
+    });
+    renderTable(filtered);
+  }
+
+  function filterByStatus(status) {
+    document.getElementById('filter-status').value = status;
+    searchPOs();
+  }
+
+  // =========================================
+  // UPDATE STATS CARDS
+  // =========================================
+  function updateStats(pos) {
+    const getStatus = p => p['Status'] || p['status'] || '';
+    document.getElementById('stat-total').textContent     = pos.length;
+    document.getElementById('stat-draft').textContent     = pos.filter(p => getStatus(p) === 'Draft').length;
+    document.getElementById('stat-submitted').textContent = pos.filter(p => getStatus(p) === 'Submitted').length;
+    document.getElementById('stat-approved').textContent  = pos.filter(p => getStatus(p) === 'Approved').length;
+  }
+
+  // =========================================
+  // TOAST NOTIFICATION
+  // =========================================
+  function showToast(msg, color) {
+    const t = document.getElementById('toast');
+    t.style.background = color || '#1a5c2a';
+    document.getElementById('toast-msg').textContent = msg;
+    t.style.display = 'flex';
+    clearTimeout(window._tt);
+    window._tt = setTimeout(() => { t.style.display = 'none'; }, 4000);
+  }
+
+</script>
+</body>
+</html>
